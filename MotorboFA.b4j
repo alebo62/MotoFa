@@ -2,10 +2,13 @@
 Build1=Default,b4j.example
 Group=Default Group
 Library1=jcore
-Module1=Encrypt
+Library2=jnetwork
+Library3=jrandomaccessfile
+Module1=Define
+Module2=Encrypt
 NumberOfFiles=0
-NumberOfLibraries=1
-NumberOfModules=1
+NumberOfLibraries=3
+NumberOfModules=2
 Version=9
 @EndOfDesignText@
 'Non-UI application (console / server application)
@@ -15,10 +18,150 @@ Version=9
 #End Region
 
 Sub Process_Globals
-	
+	Private mTcp As Socket
+	Private astream As AsyncStreams
+	Private mIsConnected As Boolean
 End Sub
 
 Sub AppStart (Args() As String)
-	Log("Hello world!!!")
+	'Log("Hello world!!!")
+	mIsConnected = False
+	mTcp.Initialize("mtcp")
+	mTcp.Connect("192.168.10.1", 8002, 3000)
 	StartMessageLoop
 End Sub
+
+Private Sub mtcp_Connected (Successful As Boolean)
+	Log(Successful)
+	mIsConnected = Successful
+	astream.Initialize( mTcp.InputStream,mTcp.OutputStream,"astream")
+End Sub
+
+Private Sub astream_NewData(Buffer() As Byte)
+	Dim buf() As Byte
+	Dim random_num(8) As Byte
+	Dim v(2), w(2) As Int
+	
+	Select Buffer(3)
+		Case 2
+			buf = Array As Byte(0x00,0x0C,0x00,0x04,0x00,0x00,0x00,0x06,0x00,0x00,0x00,0x00,0x00,0x00)
+			astream.Write(buf)
+		Case 5
+			buf = Array As Byte(0x00,0x18,0x00,0x06,0x00,0x00,0x00,0x06,0x00,0x00,0x00,0x00,0x00,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+			buf(8) = Buffer(13)
+			buf(9) = Buffer(14)
+		buf(16) = 0x0A
+		buf(17) = 0x01
+		For i = 0 To 8
+			random_num(i) = Buffer(15+i)
+		Next
+	
+'		v[0] = (((random_num[0] << 24) & 0xff000000) | ((random_num[1] << 16) & 0x00ff0000) | ((random_num[2] << 8) & 0x0000ff00) | (random_num[3] & 0x000000ff));
+'		v[1] = (((random_num[4] << 24) & 0xff000000) | ((random_num[5] << 16) & 0x00ff0000) | ((random_num[6] << 8) & 0x0000ff00) | (random_num[7] & 0x000000ff));
+'		Encrypt.encipher(v, w);
+'
+'		//System.out.print(Integer.toHexString(w[0]) + " ");
+'		//System.out.println(Integer.toHexString(w[1]));
+'		random_num[0] = (byte) (w[0] >>> 24);
+'		random_num[1] = (byte) ((w[0] & 0xff0000) >>> 16);
+'		random_num[2] = (byte) ((w[0] & 0xff00) >>> 8);
+'		random_num[3] = (byte) (w[0] & 0xff);
+'		random_num[4] = (byte) ((w[1] >>> 24));
+'		random_num[5] = (byte) ((w[1] & 0xff0000) >>> 16);
+'		random_num[6] = (byte) ((w[1] & 0xff00) >>> 8);
+'		random_num[7] = (byte) (w[1] & 0xff);
+'		//                                For (byte b : random_num) {
+'		//                                    System.out.print(Integer .toHexString(((int)b & 0xff)) + " ");
+'		//                                }
+'		//                                System.out.println("");
+'
+'		For (int i = 0; i < 8; i++) {
+'			Defs.DEV_CON_REQ1[18 + i] = (byte) random_num[i];
+'                                }
+'			//                                For (int i = 0; i < 4; i++) {
+'				//                                    Defs.DEV_CON_REQ[22 + i] = (byte)random_num[7-i];
+'				//                                }
+'				oos.write(Defs.DEV_CON_REQ1);
+'				oos.flush();
+'				System.out.println("state = 2");
+'				state = 2;
+'				break;
+'				Case (7):
+'					Defs.xnl_message1[8] = Defs.myId1[0] = buf[15];
+'					Defs.xnl_message1[9] = Defs.myId1[1] = buf[16];
+'					Defs.xnl_message1[10] = Defs.idBase1 = buf[14];
+'					Defs.xnl_message1[6] = 0x00;
+'					Defs.xnl_message1[7] = 0x06;
+'					Defs.xnl_message1[4] = 0x01;
+'					System.out.println("state = 3");
+'					state = 3;
+'					break;
+'				Case (9):
+'					System.out.println("state = 4");
+'					state = 4;
+'                            Case (0xB):
+'					System.out.println("state = 4");
+'					If (state == 4) {
+'					state = 5;
+'					System.out.println("state = " + state);
+'					Defs.DATA_MSG_ACK1[4] = buf[3];
+'					Defs.DATA_MSG_ACK1[5] = buf[4];
+'					Defs.DATA_MSG_ACK1[8] = Defs.myId1[0];
+'					Defs.DATA_MSG_ACK1[9] = Defs.myId1[1];
+'					Defs.DATA_MSG_ACK1[10] = buf[9];
+'					Defs.DATA_MSG_ACK1[11] = buf[10];
+'					oos.write(Defs.DEV_CON_REQ1);
+'					oos.flush();
+'					System.out.println("state = 5");
+'
+'					Defs.DEV_INIT_STATUS1[5] = (byte) (++Defs.xnlFlagCounter1 & 0x07);
+'					Defs.DEV_INIT_STATUS1[8] = Defs.myId1[0];
+'					Defs.DEV_INIT_STATUS1[9] = Defs.myId1[1];
+'					Defs.DEV_INIT_STATUS1[10] = Defs.idBase1;
+'					Defs.DEV_INIT_STATUS1[11] = Defs.transactID1++;
+'					oos.write(Defs.DEV_INIT_STATUS1);
+'					oos.flush();
+'				} else if (state == 6) {
+'					state = 7;
+'					System.out.println("state = " + state);
+'					Defs.DATA_MSG_ACK1[4] = buf[3];
+'					Defs.DATA_MSG_ACK1[5] = buf[4];
+'					Defs.DATA_MSG_ACK1[10] = buf[9];
+'					Defs.DATA_MSG_ACK1[11] = buf[10];
+'					oos.write(Defs.DATA_MSG_ACK1);
+'					oos.flush();
+'                                }
+'					break;
+'				Case (0xC):
+'					state = 6;
+'					System.out.println("state = " + state);
+'					break;
+'					default:
+'					System.out.println("default");
+'                        }
+'                    }		
+			
+			
+		Case 7
+			Log("Odd larger than one")
+		Case 9
+			Log("Odd larger than one")
+		Case 0x0B
+			Log("Odd larger than one")
+		Case 0x0C
+			Log("Odd larger than one")
+		Case Else
+			Log("Larger than 9")
+	End Select
+		
+	'Log(BytesToString( Buffer, 0, Buffer.Length,"utf8" ))
+End Sub
+
+Private Sub astream_Terminated
+	mIsConnected = False
+End Sub
+
+Private Sub astream_Error
+	astream_Terminated
+End Sub
+

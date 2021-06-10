@@ -1,0 +1,24 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Group=Default Group
+Library1=jcore
+Module1=Encrypt
+NumberOfFiles=0
+NumberOfLibraries=1
+NumberOfModules=1
+Version=9
+@EndOfDesignText@
+'Non-UI application (console / server application)
+#Region Project Attributes 
+	#CommandLineArgs:
+	#MergeLibraries: True 
+#End Region
+
+Sub Process_Globals
+	
+End Sub
+
+Sub AppStart (Args() As String)
+	Log("Hello world!!!")
+	StartMessageLoop
+End Sub

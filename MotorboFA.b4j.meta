@@ -1,12 +1,12 @@
 ﻿ModuleBookmarks0=
 ModuleBookmarks1=
 ModuleBookmarks2=
-ModuleBreakpoints0=
+ModuleBreakpoints0=85,74
 ModuleBreakpoints1=
 ModuleBreakpoints2=
 ModuleClosedNodes0=1
 ModuleClosedNodes1=
 ModuleClosedNodes2=
-NavigationStack=Encrypt,Initialize,6,0,Encrypt,encipher,12,6,Main,Process_Globals,11,6,Main,AppStart,15,6,Main,astream_Error,38,2,Main,astream_Terminated,33,2,Main,mtcp_Connected,20,6,Encrypt,Class_Globals,0,4,Main,astream_NewData,137,6,Define,Process_Globals,3,6
+NavigationStack=Main,astream_Error,156,2,Main,Process_Globals,12,6,Main,ToUnsigned,146,0,Main,tim1_Tick,147,0,Define,Process_Globals,11,6,Main,AppStart,17,6,Main,mtcp_Connected,29,6,Encrypt,Class_Globals,1,5,Main,astream_NewData,73,6,Encrypt,encipher,18,6
 SelectedBuild=0
 VisibleModules=2,1

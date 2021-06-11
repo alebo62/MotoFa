@@ -21,10 +21,16 @@ Sub Process_Globals
 	Private mTcp As Socket
 	Private astream As AsyncStreams
 	Private mIsConnected As Boolean
+	Private State As Int
+	Private enc As Encrypt
+	Private tim1 As Timer
 End Sub
 
 Sub AppStart (Args() As String)
 	'Log("Hello world!!!")
+	enc.Initialize
+	tim1.Initialize("tim1", 3000)
+	tim1.Enabled = True
 	mIsConnected = False
 	mTcp.Initialize("mtcp")
 	mTcp.Connect("192.168.10.1", 8002, 3000)
@@ -34,13 +40,17 @@ End Sub
 Private Sub mtcp_Connected (Successful As Boolean)
 	Log(Successful)
 	mIsConnected = Successful
-	astream.Initialize( mTcp.InputStream,mTcp.OutputStream,"astream")
+	If mIsConnected = True Then
+		tim1.Enabled = False
+		astream.Initialize( mTcp.InputStream,mTcp.OutputStream,"astream")
+	End If
 End Sub
 
 Private Sub astream_NewData(Buffer() As Byte)
-	Dim buf() As Byte
+	Dim buf(), buf1() As Byte
 	Dim random_num(8) As Byte
-	Dim v(2), w(2) As Int
+	Dim v(2), w(2) As Long
+	Dim tmp1, tmp2 As Int
 	
 	Select Buffer(3)
 		Case 2
@@ -50,108 +60,100 @@ Private Sub astream_NewData(Buffer() As Byte)
 			buf = Array As Byte(0x00,0x18,0x00,0x06,0x00,0x00,0x00,0x06,0x00,0x00,0x00,0x00,0x00,0x0C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
 			buf(8) = Buffer(13)
 			buf(9) = Buffer(14)
-		buf(16) = 0x0A
-		buf(17) = 0x01
-		For i = 0 To 8
-			random_num(i) = Buffer(15+i)
-		Next
-	
-'		v[0] = (((random_num[0] << 24) & 0xff000000) | ((random_num[1] << 16) & 0x00ff0000) | ((random_num[2] << 8) & 0x0000ff00) | (random_num[3] & 0x000000ff));
-'		v[1] = (((random_num[4] << 24) & 0xff000000) | ((random_num[5] << 16) & 0x00ff0000) | ((random_num[6] << 8) & 0x0000ff00) | (random_num[7] & 0x000000ff));
-'		Encrypt.encipher(v, w);
-'
-'		//System.out.print(Integer.toHexString(w[0]) + " ");
-'		//System.out.println(Integer.toHexString(w[1]));
-'		random_num[0] = (byte) (w[0] >>> 24);
-'		random_num[1] = (byte) ((w[0] & 0xff0000) >>> 16);
-'		random_num[2] = (byte) ((w[0] & 0xff00) >>> 8);
-'		random_num[3] = (byte) (w[0] & 0xff);
-'		random_num[4] = (byte) ((w[1] >>> 24));
-'		random_num[5] = (byte) ((w[1] & 0xff0000) >>> 16);
-'		random_num[6] = (byte) ((w[1] & 0xff00) >>> 8);
-'		random_num[7] = (byte) (w[1] & 0xff);
-'		//                                For (byte b : random_num) {
-'		//                                    System.out.print(Integer .toHexString(((int)b & 0xff)) + " ");
-'		//                                }
-'		//                                System.out.println("");
-'
-'		For (int i = 0; i < 8; i++) {
-'			Defs.DEV_CON_REQ1[18 + i] = (byte) random_num[i];
-'                                }
-'			//                                For (int i = 0; i < 4; i++) {
-'				//                                    Defs.DEV_CON_REQ[22 + i] = (byte)random_num[7-i];
-'				//                                }
-'				oos.write(Defs.DEV_CON_REQ1);
-'				oos.flush();
-'				System.out.println("state = 2");
-'				state = 2;
-'				break;
-'				Case (7):
-'					Defs.xnl_message1[8] = Defs.myId1[0] = buf[15];
-'					Defs.xnl_message1[9] = Defs.myId1[1] = buf[16];
-'					Defs.xnl_message1[10] = Defs.idBase1 = buf[14];
-'					Defs.xnl_message1[6] = 0x00;
-'					Defs.xnl_message1[7] = 0x06;
-'					Defs.xnl_message1[4] = 0x01;
-'					System.out.println("state = 3");
-'					state = 3;
-'					break;
-'				Case (9):
-'					System.out.println("state = 4");
-'					state = 4;
-'                            Case (0xB):
-'					System.out.println("state = 4");
-'					If (state == 4) {
-'					state = 5;
-'					System.out.println("state = " + state);
-'					Defs.DATA_MSG_ACK1[4] = buf[3];
-'					Defs.DATA_MSG_ACK1[5] = buf[4];
-'					Defs.DATA_MSG_ACK1[8] = Defs.myId1[0];
-'					Defs.DATA_MSG_ACK1[9] = Defs.myId1[1];
-'					Defs.DATA_MSG_ACK1[10] = buf[9];
-'					Defs.DATA_MSG_ACK1[11] = buf[10];
-'					oos.write(Defs.DEV_CON_REQ1);
-'					oos.flush();
-'					System.out.println("state = 5");
-'
-'					Defs.DEV_INIT_STATUS1[5] = (byte) (++Defs.xnlFlagCounter1 & 0x07);
-'					Defs.DEV_INIT_STATUS1[8] = Defs.myId1[0];
-'					Defs.DEV_INIT_STATUS1[9] = Defs.myId1[1];
-'					Defs.DEV_INIT_STATUS1[10] = Defs.idBase1;
-'					Defs.DEV_INIT_STATUS1[11] = Defs.transactID1++;
-'					oos.write(Defs.DEV_INIT_STATUS1);
-'					oos.flush();
-'				} else if (state == 6) {
-'					state = 7;
-'					System.out.println("state = " + state);
-'					Defs.DATA_MSG_ACK1[4] = buf[3];
-'					Defs.DATA_MSG_ACK1[5] = buf[4];
-'					Defs.DATA_MSG_ACK1[10] = buf[9];
-'					Defs.DATA_MSG_ACK1[11] = buf[10];
-'					oos.write(Defs.DATA_MSG_ACK1);
-'					oos.flush();
-'                                }
-'					break;
-'				Case (0xC):
-'					state = 6;
-'					System.out.println("state = " + state);
-'					break;
-'					default:
-'					System.out.println("default");
-'                        }
-'                    }		
+			buf(16) = 0x0A
+			buf(17) = 0x01
+			For i = 0 To 7
+				random_num(i) = ToUnsigned(Buffer(15+i))
+			Next
+			random_num(0) = 0x72'Bit.UnsignedShiftRight(w(0), 24)
+			random_num(1) = 0xA4'Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF0000), 16)
+			random_num(2) = 0x1F'Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF00), 8)
+			random_num(3) = 0x8F'Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF), 0)
+			random_num(4) = 0x63'Bit.UnsignedShiftRight(w(1), 24)
+			random_num(5) = 0x66'Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF0000), 16)
+			random_num(6) = 0x01'Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF00), 8)
+			random_num(7) = 0xAA'Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF), 0)
+	    
+			v(0) = Bit.ShiftLeft(ToUnsigned(random_num(0)), 24)
+			v(0) = Bit.Or(v(0), Bit.ShiftLeft(ToUnsigned(random_num(1)), 16))
+			v(0) = Bit.Or(v(0), Bit.ShiftLeft(ToUnsigned(random_num(2)), 8))
+			v(0) = Bit.Or(v(0), Bit.ShiftLeft(ToUnsigned(random_num(3)), 0))
+
+			v(1) = Bit.ShiftLeft(ToUnsigned(random_num(4)), 24)
+			v(1) = Bit.Or(v(1), Bit.ShiftLeft(ToUnsigned(random_num(5)), 16))
+			v(1) = Bit.Or(v(1), Bit.ShiftLeft(ToUnsigned(random_num(6)), 8))
+			v(1) = Bit.Or(v(1), Bit.ShiftLeft(ToUnsigned(random_num(7)), 0))
 			
+			enc.encipher(v, w)
+
+			random_num(0) = Bit.UnsignedShiftRight(w(0), 24)
+			random_num(1) = Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF0000), 16)
+			random_num(2) = Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF00), 8)
+			random_num(3) = Bit.UnsignedShiftRight(Bit.And(w(0), 0xFF), 0)
+			random_num(4) = Bit.UnsignedShiftRight(w(1), 24)
+			random_num(5) = Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF0000), 16)
+			random_num(6) = Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF00), 8)
+			random_num(7) = Bit.UnsignedShiftRight(Bit.And(w(1), 0xFF), 0)
 			
+			For i = 0 To 7
+				buf(18+i) = random_num(i)
+			Next
+			astream.Write(buf)
+			State = 2
 		Case 7
-			Log("Odd larger than one")
+			Log("Case 7")
+			Define.idBase1 = Buffer(14)
+			Define.myId1(0) = Buffer(15)
+			Define.myId1(1) = Buffer(16)
+			Define.xnl_message1(4) = 1
+			Define.xnl_message1(6) = 0
+			Define.xnl_message1(7) = 6
+			
+			Define.xnl_message1(8) = Buffer(15)
+			Define.xnl_message1(9) = Buffer(16)
+			Define.xnl_message1(10) = Buffer(14)
+			
+			State = 3
+'					
 		Case 9
-			Log("Odd larger than one")
+			State = 4
+			Log("Case 9")
 		Case 0x0B
-			Log("Odd larger than one")
+			If State = 4 Then
+				State = 5
+				buf =	Array As Byte( 0x00,0x0C,0x00,0x0C,0x01,0x00,0x00,0x06,0x00,0x01,0x01,0x03,0x00,0x00)
+				buf(4) = Buffer(3)
+				buf(5) = Buffer(4)
+				buf(8) = Define.myId1(0)
+				buf(9) = Define.myId1(1)
+				buf(10) = Buffer(9)
+				buf(11) = Buffer(10)
+				astream.Write(buf)
+				
+				buf1 =	Array As Byte(0x00,0x1B,0x00,0x0B,0x01,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x0F,0xB4,0x00,0x00,0x00,0x00,0x01,0x00,0x0A,0x00,0x00,0x04,0x00,0x00,0x02,0xFF)
+
+				Define.xnlFlagCounter1 = Define.xnlFlagCounter1 + 1
+				buf1(5) = Bit.And(Define.xnlFlagCounter1, 0x07)
+				buf1(8) = Define.myId1(0)
+				buf1(9) = Define.myId1(1)
+				buf1(10) = Define.idBase1
+				buf1(11) = Define.transactID1
+				Define.transactID1 = Define.transactID1 + 1
+				astream.Write(buf1)
+			else if State = 6 Then
+				State = 7
+				Log("7")
+				buf =	Array As Byte( 0x00,0x0C,0x00,0x0C,0x01,0x00,0x00,0x06,0x00,0x01,0x01,0x03,0x00,0x00)
+				buf(4) = Buffer(3)
+				buf(5) = Buffer(4)
+				buf(10) = Buffer(9)
+				buf(11) = Buffer(10)
+				astream.Write(buf)
+			End If
 		Case 0x0C
-			Log("Odd larger than one")
+			State = 6
 		Case Else
-			Log("Larger than 9")
+			Log("What is it???")
 	End Select
 		
 	'Log(BytesToString( Buffer, 0, Buffer.Length,"utf8" ))
@@ -163,5 +165,13 @@ End Sub
 
 Private Sub astream_Error
 	astream_Terminated
+End Sub
+
+Public Sub ToUnsigned(b As Byte) As Int
+	Return Bit.And(0xFF, b)
+End Sub
+
+Public Sub tim1_Tick()
+	mTcp.Connect("192.168.10.1", 8002, 3000)
 End Sub
 
